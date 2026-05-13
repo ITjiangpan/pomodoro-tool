@@ -1,8 +1,10 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+mod db;
+pub mod timer;
+
+use db::Database;
+use timer::TimerEngine;
+use timer::config::Settings;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -10,7 +12,42 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .setup(|app| {
+            let app_dir = app.path().app_data_dir().expect("failed to get app data dir");
+            std::fs::create_dir_all(&app_dir).expect("failed to create app data dir");
+            let db_path = app_dir.join("pomodoro.db");
+            let db = Database::new(db_path.to_str().unwrap())
+                .expect("failed to initialize database");
+
+            // Ensure default settings exist
+            {
+                let conn = db.conn.lock().unwrap();
+                let count: i64 = conn
+                    .query_row("SELECT COUNT(*) FROM settings", [], |row| row.get(0))
+                    .unwrap();
+                if count == 0 {
+                    let default = Settings::default();
+                    conn.execute(
+                        "INSERT INTO settings (work_duration, short_break, long_break,
+                         long_break_interval, auto_start_break, auto_start_work)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                        rusqlite::params![
+                            default.work_duration,
+                            default.short_break,
+                            default.long_break,
+                            default.long_break_interval,
+                            default.auto_start_break as i32,
+                            default.auto_start_work as i32,
+                        ],
+                    ).unwrap();
+                }
+            }
+
+            app.manage(db);
+            app.manage(TimerEngine::new());
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
