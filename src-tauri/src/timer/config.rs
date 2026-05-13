@@ -22,3 +22,43 @@ impl Default for Settings {
         }
     }
 }
+
+use crate::db::Database;
+use tauri::State;
+
+#[tauri::command]
+pub fn get_settings(db: State<'_, Database>) -> Result<Settings, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let settings = conn.query_row(
+        "SELECT work_duration, short_break, long_break, long_break_interval,
+                auto_start_break, auto_start_work FROM settings WHERE id = 1",
+        [],
+        |row| Ok(Settings {
+            work_duration: row.get(0)?,
+            short_break: row.get(1)?,
+            long_break: row.get(2)?,
+            long_break_interval: row.get(3)?,
+            auto_start_break: row.get::<_, i32>(4)? != 0,
+            auto_start_work: row.get::<_, i32>(5)? != 0,
+        }),
+    ).map_err(|e| e.to_string())?;
+    Ok(settings)
+}
+
+#[tauri::command]
+pub fn update_settings(db: State<'_, Database>, settings: Settings) -> Result<Settings, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE settings SET work_duration=?1, short_break=?2, long_break=?3,
+         long_break_interval=?4, auto_start_break=?5, auto_start_work=?6 WHERE id=1",
+        rusqlite::params![
+            settings.work_duration,
+            settings.short_break,
+            settings.long_break,
+            settings.long_break_interval,
+            settings.auto_start_break as i32,
+            settings.auto_start_work as i32,
+        ],
+    ).map_err(|e| e.to_string())?;
+    Ok(settings)
+}

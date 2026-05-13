@@ -1,6 +1,7 @@
 mod db;
 pub mod timer;
 mod task;
+mod stats;
 
 use db::Database;
 use timer::TimerEngine;
@@ -53,6 +54,9 @@ pub fn run() {
             task::update_task,
             task::delete_task,
             task::list_tasks,
+            timer::config::get_settings,
+            timer::config::update_settings,
+            stats::get_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
