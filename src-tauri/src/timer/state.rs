@@ -21,7 +21,7 @@ impl TimerPhase {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TimerState {
     pub phase: TimerPhase,
     pub elapsed_secs: u64,

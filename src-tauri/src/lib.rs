@@ -56,6 +56,12 @@ pub fn run() {
             task::list_tasks,
             timer::config::get_settings,
             timer::config::update_settings,
+            timer::start_timer,
+            timer::pause_timer,
+            timer::resume_timer,
+            timer::stop_timer,
+            timer::skip_rest,
+            timer::get_timer_state,
             stats::get_stats,
         ])
         .run(tauri::generate_context!())

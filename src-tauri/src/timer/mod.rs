@@ -82,3 +82,141 @@ impl TimerEngine {
         s.clone()
     }
 }
+
+use crate::db::Database;
+use tauri::{AppHandle, Emitter, Manager, State};
+
+#[tauri::command]
+pub fn start_timer(
+    app: AppHandle,
+    engine: State<'_, TimerEngine>,
+    db: State<'_, Database>,
+    task_id: Option<i64>,
+) -> Result<state::TimerState, String> {
+    let settings = {
+        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        conn.query_row(
+            "SELECT work_duration, short_break, long_break, long_break_interval,
+                    auto_start_break, auto_start_work FROM settings WHERE id = 1",
+            [],
+            |row| Ok(config::Settings {
+                work_duration: row.get(0)?,
+                short_break: row.get(1)?,
+                long_break: row.get(2)?,
+                long_break_interval: row.get(3)?,
+                auto_start_break: row.get::<_, i32>(4)? != 0,
+                auto_start_work: row.get::<_, i32>(5)? != 0,
+            }),
+        ).map_err(|e| e.to_string())?
+    };
+
+    let result = engine.start_work(&settings, task_id);
+    let engine_clone = engine.inner().clone();
+
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            let current = engine_clone.get_state();
+            if current.phase == state::TimerPhase::Idle {
+                break;
+            }
+            if current.phase == state::TimerPhase::Paused {
+                continue;
+            }
+
+            let (completed, new_state) = engine_clone.tick();
+            let _ = app.emit("timer:tick", serde_json::json!({
+                "phase": new_state.phase.as_str(),
+                "remaining_secs": new_state.remaining_secs(),
+                "total_secs": new_state.total_secs,
+            }));
+
+            if completed {
+                if let Some(db_state) = app.try_state::<Database>() {
+                    if let Ok(conn) = db_state.conn.lock() {
+                        let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+                        let dur = new_state.total_secs.min(new_state.elapsed_secs) / 60;
+                        let _ = conn.execute(
+                            "INSERT INTO pomodoro_sessions (task_id, duration, started_at, ended_at, session_type)
+                             VALUES (?1, ?2, ?3, ?4, 'work')",
+                            rusqlite::params![new_state.task_id, dur as i64, "", now],
+                        );
+                    }
+                }
+
+                let _ = app.emit("timer:completed", serde_json::json!({
+                    "session_type": "work",
+                    "task_id": new_state.task_id,
+                }));
+
+                engine_clone.reset();
+                break;
+            }
+        }
+    });
+
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn pause_timer(
+    app: AppHandle,
+    engine: State<'_, TimerEngine>,
+) -> Result<state::TimerState, String> {
+    let result = engine.pause();
+    let _ = app.emit("timer:tick", serde_json::json!({
+        "phase": result.phase.as_str(),
+        "remaining_secs": result.remaining_secs(),
+        "total_secs": result.total_secs,
+    }));
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn resume_timer(
+    app: AppHandle,
+    engine: State<'_, TimerEngine>,
+) -> Result<state::TimerState, String> {
+    let result = engine.resume();
+    let _ = app.emit("timer:tick", serde_json::json!({
+        "phase": result.phase.as_str(),
+        "remaining_secs": result.remaining_secs(),
+        "total_secs": result.total_secs,
+    }));
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn get_timer_state(
+    engine: State<'_, TimerEngine>,
+) -> Result<state::TimerState, String> {
+    Ok(engine.get_state())
+}
+
+#[tauri::command]
+pub fn stop_timer(
+    app: AppHandle,
+    engine: State<'_, TimerEngine>,
+) -> Result<state::TimerState, String> {
+    let result = engine.reset();
+    let _ = app.emit("timer:tick", serde_json::json!({
+        "phase": "idle",
+        "remaining_secs": 0,
+        "total_secs": 0,
+    }));
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn skip_rest(
+    app: AppHandle,
+    engine: State<'_, TimerEngine>,
+) -> Result<state::TimerState, String> {
+    let result = engine.skip_rest();
+    let _ = app.emit("timer:tick", serde_json::json!({
+        "phase": "idle",
+        "remaining_secs": 0,
+        "total_secs": 0,
+    }));
+    Ok(result)
+}
