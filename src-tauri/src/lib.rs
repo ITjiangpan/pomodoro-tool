@@ -1,5 +1,6 @@
 mod db;
 pub mod timer;
+mod task;
 
 use db::Database;
 use timer::TimerEngine;
@@ -47,7 +48,12 @@ pub fn run() {
             app.manage(TimerEngine::new());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![
+            task::create_task,
+            task::update_task,
+            task::delete_task,
+            task::list_tasks,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
