@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "pomodoro-tool",
+  "productName": "休息一下",
   "version": "0.1.0",
   "identifier": "com.jiangpan.pomodoro-tool",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "pomodoro-tool",
+        "title": "休息一下",
         "width": 800,
         "height": 600
       }
