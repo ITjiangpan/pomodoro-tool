@@ -35,7 +35,7 @@ function handleSelect(id: number) {
 
 <template>
   <div class="task-qs">
-    <div class="section-title">当前任务</div>
+    <div class="section-title">选择任务 <span class="required">*必选</span></div>
     <div class="task-list">
       <button v-for="t in tasks" :key="t.id"
         :class="['task-opt', { selected: selectedTaskId === t.id }]"
@@ -55,6 +55,7 @@ function handleSelect(id: number) {
 <style scoped>
 .task-qs { margin-top: 16px; width: 100%; max-width: 360px; }
 .section-title { font-size: 12px; color: var(--color-text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+.required { color: var(--color-primary); font-weight: 400; letter-spacing: 0; margin-left: 4px; }
 .task-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; max-height: 120px; overflow-y: auto; }
 .task-opt { background: var(--color-surface); color: var(--color-text); padding: 8px 12px; text-align: left; border-radius: var(--radius-sm); font-size: 13px; }
 .task-opt:hover { background: var(--color-secondary); }

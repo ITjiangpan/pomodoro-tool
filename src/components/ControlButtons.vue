@@ -1,12 +1,14 @@
 <script setup lang="ts">
-defineProps<{ phase: string }>()
+defineProps<{ phase: string; startDisabled?: boolean }>()
 const emit = defineEmits<{ start: []; pause: []; resume: []; skip: []; stop: [] }>()
 </script>
 
 <template>
   <div class="controls">
     <template v-if="phase === 'idle'">
-      <button class="btn btn-primary" @click="emit('start')">开始专注</button>
+      <button class="btn btn-primary" :class="{ disabled: startDisabled }"
+        :disabled="startDisabled" :title="startDisabled ? '请先选择一个任务' : ''"
+        @click="emit('start')">开始专注</button>
     </template>
     <template v-else-if="phase === 'working'">
       <button class="btn btn-secondary" @click="emit('pause')">暂停</button>
@@ -26,6 +28,7 @@ const emit = defineEmits<{ start: []; pause: []; resume: []; skip: []; stop: [] 
 .btn { padding: 12px 32px; border-radius: 50px; font-size: 16px; font-weight: 600; }
 .btn-primary { background: var(--color-primary); color: white; }
 .btn-primary:hover { background: #d63851; }
+.btn-primary.disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .btn-secondary { background: var(--color-secondary); color: var(--color-text); }
 .btn-secondary:hover { background: #1a4a7a; }
 .btn-ghost { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-text-muted); }
