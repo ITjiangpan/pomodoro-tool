@@ -132,6 +132,12 @@ pub fn start_timer(
             }));
 
             if completed {
+                // Increment counter before DB insert so the state has the right count
+                {
+                    let mut s = engine_clone.state.lock().unwrap();
+                    s.completed_pomodoros += 1;
+                }
+
                 if let Some(db_state) = app.try_state::<Database>() {
                     if let Ok(conn) = db_state.conn.lock() {
                         let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
@@ -189,8 +195,21 @@ pub fn resume_timer(
 #[tauri::command]
 pub fn get_timer_state(
     engine: State<'_, TimerEngine>,
+    db: State<'_, Database>,
 ) -> Result<state::TimerState, String> {
-    Ok(engine.get_state())
+    let mut state = engine.get_state();
+    // Query today's completed pomodoros so the count survives app restart
+    if let Ok(conn) = db.conn.lock() {
+        let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+        if let Ok(count) = conn.query_row(
+            "SELECT COUNT(*) FROM pomodoro_sessions WHERE date(ended_at) = ?1 AND session_type = 'work'",
+            rusqlite::params![today],
+            |row| row.get::<_, i64>(0),
+        ) {
+            state.completed_pomodoros = count as u64;
+        }
+    }
+    Ok(state)
 }
 
 #[tauri::command]

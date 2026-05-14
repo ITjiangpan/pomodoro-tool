@@ -17,7 +17,7 @@ onMounted(async () => {
     const saved = await tauri.getTimerState() as any
     if (saved && saved.phase !== 'idle') {
       state.value.phase = saved.phase
-      state.value.remaining_secs = saved.remaining_secs
+      state.value.remaining_secs = saved.remaining_secs ?? saved.total_secs - (saved.elapsed_secs ?? 0)
       state.value.total_secs = saved.total_secs
       state.value.task_id = saved.task_id
     }
