@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useTimer } from '../composables/useTimer'
 import { useTauri } from '../composables/useTauri'
 import TimerDisplay from '../components/TimerDisplay.vue'
@@ -9,7 +9,7 @@ import TaskQuickSelect from '../components/TaskQuickSelect.vue'
 const tauri = useTauri()
 const { state, init, destroy, formatTime, timerProgress, phaseLabel } = useTimer()
 
-let currentTaskId: number | null = null
+const currentTaskId = ref<number | null>(null)
 
 onMounted(async () => {
   await init(tauri)
@@ -33,14 +33,14 @@ onMounted(async () => {
 onUnmounted(() => destroy())
 
 async function handleStart() {
-  await tauri.startTimer(currentTaskId ?? undefined)
+  await tauri.startTimer(currentTaskId.value ?? undefined)
 }
 async function handlePause() { await tauri.pauseTimer() }
 async function handleResume() { await tauri.resumeTimer() }
 async function handleSkip() { await tauri.skipRest() }
 async function handleStop() { await tauri.stopTimer() }
 
-function handleTaskSelect(taskId: number | null) { currentTaskId = taskId }
+function handleTaskSelect(taskId: number | null) { currentTaskId.value = taskId }
 </script>
 
 <template>
