@@ -27,14 +27,14 @@ pub fn get_stats(db: State<'_, Database>, range: String) -> Result<Stats, String
     ).map_err(|e| e.to_string())?;
 
     let (date_filter, date_format) = match range.as_str() {
-        "weekly" => ("started_at >= datetime('now', '-7 days')", "%Y-%m-%d"),
-        "monthly" => ("started_at >= datetime('now', '-30 days')", "%Y-%m-%d"),
-        _ => ("started_at >= datetime('now', '-1 day', 'start of day')", "%Y-%m-%d"),
+        "weekly" => ("ended_at >= datetime('now', '-7 days')", "%Y-%m-%d"),
+        "monthly" => ("ended_at >= datetime('now', '-30 days')", "%Y-%m-%d"),
+        _ => ("ended_at >= datetime('now', '-1 day', 'start of day')", "%Y-%m-%d"),
     };
 
     let mut stmt = conn.prepare(
         &format!(
-            "SELECT strftime('{}', started_at) as day, COUNT(*) as cnt
+            "SELECT strftime('{}', ended_at) as day, COUNT(*) as cnt
              FROM pomodoro_sessions
              WHERE session_type = 'work' AND {}
              GROUP BY day ORDER BY day",

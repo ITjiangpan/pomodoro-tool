@@ -145,7 +145,7 @@ pub fn start_timer(
                         let _ = conn.execute(
                             "INSERT INTO pomodoro_sessions (task_id, duration, started_at, ended_at, session_type)
                              VALUES (?1, ?2, ?3, ?4, 'work')",
-                            rusqlite::params![new_state.task_id, dur as i64, "", now],
+                            rusqlite::params![new_state.task_id, dur as i64, now, now],
                         );
                     }
                 }
