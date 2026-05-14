@@ -132,28 +132,67 @@ pub fn start_timer(
             }));
 
             if completed {
-                // Increment counter before DB insert so the state has the right count
-                {
-                    let mut s = engine_clone.state.lock().unwrap();
-                    s.completed_pomodoros += 1;
-                }
+                match new_state.phase {
+                    TimerPhase::Working => {
+                        // Increment completed pomodoro count
+                        let completed_count = {
+                            let mut s = engine_clone.state.lock().unwrap();
+                            s.completed_pomodoros += 1;
+                            s.completed_pomodoros
+                        };
 
-                if let Some(db_state) = app.try_state::<Database>() {
-                    if let Ok(conn) = db_state.conn.lock() {
-                        let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-                        let dur = new_state.total_secs.min(new_state.elapsed_secs) / 60;
-                        let _ = conn.execute(
-                            "INSERT INTO pomodoro_sessions (task_id, duration, started_at, ended_at, session_type)
-                             VALUES (?1, ?2, ?3, ?4, 'work')",
-                            rusqlite::params![new_state.task_id, dur as i64, now, now],
-                        );
+                        // Save session to DB
+                        if let Some(db_state) = app.try_state::<Database>() {
+                            if let Ok(conn) = db_state.conn.lock() {
+                                let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+                                let dur = new_state.total_secs.min(new_state.elapsed_secs) / 60;
+                                let _ = conn.execute(
+                                    "INSERT INTO pomodoro_sessions (task_id, duration, started_at, ended_at, session_type)
+                                     VALUES (?1, ?2, ?3, ?4, 'work')",
+                                    rusqlite::params![new_state.task_id, dur as i64, now, now],
+                                );
+                            }
+                        }
+
+                        let _ = app.emit("timer:completed", serde_json::json!({
+                            "session_type": "work",
+                            "task_id": new_state.task_id,
+                        }));
+
+                        // Auto-start break if enabled
+                        if settings.auto_start_break {
+                            let is_long = completed_count % settings.long_break_interval as u64 == 0;
+                            engine_clone.start_rest(&settings, is_long);
+                            let s = engine_clone.get_state();
+                            let _ = app.emit("timer:tick", serde_json::json!({
+                                "phase": s.phase.as_str(),
+                                "remaining_secs": s.remaining_secs(),
+                                "total_secs": s.total_secs,
+                            }));
+                            continue;
+                        }
                     }
-                }
+                    TimerPhase::ShortBreak | TimerPhase::LongBreak => {
+                        // Break completed — emit event so frontend can react
+                        let _ = app.emit("timer:completed", serde_json::json!({
+                            "session_type": "break",
+                        }));
 
-                let _ = app.emit("timer:completed", serde_json::json!({
-                    "session_type": "work",
-                    "task_id": new_state.task_id,
-                }));
+                        // Auto-start next work session if enabled
+                        if settings.auto_start_work {
+                            let task_id = { let s = engine_clone.state.lock().unwrap(); s.task_id };
+                            engine_clone.start_work(&settings, task_id);
+                            let s = engine_clone.get_state();
+                            let _ = app.emit("timer:tick", serde_json::json!({
+                                "phase": s.phase.as_str(),
+                                "remaining_secs": s.remaining_secs(),
+                                "total_secs": s.total_secs,
+                            }));
+                            continue;
+                        }
+                    }
+                    _ => {}
+                }
 
                 engine_clone.reset();
                 break;
