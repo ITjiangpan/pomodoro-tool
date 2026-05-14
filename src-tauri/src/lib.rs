@@ -42,6 +42,12 @@ pub fn run() {
                             default.auto_start_work as i32,
                         ],
                     ).unwrap();
+                } else {
+                    // Update default for auto_start_break for existing users
+                    conn.execute(
+                        "UPDATE settings SET auto_start_break = 1 WHERE id = 1 AND auto_start_break = 0",
+                        [],
+                    ).unwrap();
                 }
             }
 

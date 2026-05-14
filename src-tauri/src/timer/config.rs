@@ -17,7 +17,7 @@ impl Default for Settings {
             short_break: 5,
             long_break: 15,
             long_break_interval: 4,
-            auto_start_break: false,
+            auto_start_break: true,
             auto_start_work: false,
         }
     }
