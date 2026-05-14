@@ -15,11 +15,17 @@ onMounted(async () => {
   await init(tauri)
   try {
     const saved = await tauri.getTimerState() as any
-    if (saved && saved.phase !== 'idle') {
-      state.value.phase = saved.phase
-      state.value.remaining_secs = saved.remaining_secs ?? saved.total_secs - (saved.elapsed_secs ?? 0)
-      state.value.total_secs = saved.total_secs
-      state.value.task_id = saved.task_id
+    if (saved) {
+      // Always sync today's completed count from DB
+      if (typeof saved.completed_pomodoros === 'number') {
+        state.value.completed_pomodoros = saved.completed_pomodoros
+      }
+      if (saved.phase !== 'idle') {
+        state.value.phase = saved.phase
+        state.value.remaining_secs = saved.remaining_secs ?? saved.total_secs - (saved.elapsed_secs ?? 0)
+        state.value.total_secs = saved.total_secs
+        state.value.task_id = saved.task_id
+      }
     }
   } catch (e) { /* first launch, no state */ }
 })
