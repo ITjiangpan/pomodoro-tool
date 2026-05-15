@@ -5,15 +5,19 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build:
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: macos-latest
             bundles: dmg
+            asset-name: pomodoro-tool-x64.dmg
+            asset-path: src-tauri/target/release/bundle/dmg/*.dmg
           - platform: windows-latest
             bundles: nsis
+            asset-name: pomodoro-tool-x64.exe
+            asset-path: src-tauri/target/release/bundle/nsis/*.exe
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -32,12 +36,37 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build and Release
+      - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
+        with:
+          args: --bundles ${{ matrix.bundles }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
         with:
-          tagName: v__VERSION__
-          releaseName: v__VERSION__
-          releaseDraft: true
-          args: --bundles ${{ matrix.bundles }}
+          name: ${{ matrix.asset-name }}
+          path: ${{ matrix.asset-path }}
+          if-no-files-found: error
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          files: |
+            pomodoro-tool-x64.dmg/*
+            pomodoro-tool-x64.exe/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
