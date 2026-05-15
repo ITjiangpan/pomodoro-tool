@@ -117,6 +117,17 @@ pub fn start_timer(
 
     tauri::async_runtime::spawn(async move {
         let mut pending_task_id: Option<i64> = None;
+
+        // Emit initial state immediately so the UI responds without delay
+        {
+            let s = engine_clone.get_state();
+            let _ = app.emit("timer:tick", serde_json::json!({
+                "phase": s.phase.as_str(),
+                "remaining_secs": s.remaining_secs(),
+                "total_secs": s.total_secs,
+            }));
+        }
+
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             let current = engine_clone.get_state();
