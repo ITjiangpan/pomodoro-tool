@@ -50,6 +50,10 @@ async function confirmStop() {
   showStopConfirm.value = false
   await tauri.stopTimer()
 }
+async function cancelStop() {
+  showStopConfirm.value = false
+  await tauri.resumeTimer()
+}
 
 function handleTaskSelect(taskId: number | null, taskTitle?: string) {
   currentTaskId.value = taskId
@@ -80,7 +84,7 @@ function handleTaskSelect(taskId: number | null, taskTitle?: string) {
           <h3>确定放弃当前番茄钟？</h3>
           <p>本次专注将不会记录到统计中</p>
           <div class="confirm-actions">
-            <button class="btn-cancel" @click="showStopConfirm = false">取消</button>
+            <button class="btn-cancel" @click="cancelStop">继续专注</button>
             <button class="btn-danger" @click="confirmStop">放弃</button>
           </div>
         </div>
