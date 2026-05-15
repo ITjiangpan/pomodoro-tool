@@ -24,6 +24,8 @@ export interface Task {
   description: string
   completed: boolean
   created_at: string
+  session_count: number
+  last_used_at: string | null
 }
 
 export interface Settings {

@@ -43,7 +43,11 @@ function handleSelect(id: number) {
       <button v-for="t in tasks" :key="t.id"
         :class="['task-opt', { selected: selectedTaskId === t.id }]"
         @click="handleSelect(t.id)"
-      >{{ t.title }}</button>
+      >
+        <span class="task-check">{{ selectedTaskId === t.id ? '✓' : '' }}</span>
+        <span class="task-title">{{ t.title }}</span>
+        <span v-if="t.session_count > 0" class="task-count">{{ t.session_count }}</span>
+      </button>
       <div v-if="tasks.length === 0 && !newTaskTitle" class="empty-hint">
         还没有任务，输入名称创建第一个
       </div>
@@ -60,9 +64,13 @@ function handleSelect(id: number) {
 .section-title { font-size: 12px; color: var(--color-text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
 .required { color: var(--color-primary); font-weight: 400; letter-spacing: 0; margin-left: 4px; }
 .task-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; max-height: 120px; overflow-y: auto; }
-.task-opt { background: var(--color-surface); color: var(--color-text); padding: 8px 12px; text-align: left; border-radius: var(--radius-sm); font-size: 13px; }
+.task-opt { background: var(--color-surface); color: var(--color-text); padding: 8px 12px; text-align: left; border-radius: var(--radius-sm); font-size: 13px; display: flex; align-items: center; gap: 8px; width: 100%; }
 .task-opt:hover { background: var(--color-secondary); }
 .task-opt.selected { background: var(--color-primary); color: white; }
+.task-check { width: 16px; font-size: 14px; flex-shrink: 0; }
+.task-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-count { background: rgba(255,255,255,0.2); padding: 1px 7px; border-radius: 10px; font-size: 11px; flex-shrink: 0; }
+.task-opt:not(.selected) .task-count { background: var(--color-secondary); color: var(--color-text-muted); }
 .empty-hint { color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 12px; }
 .create-row { display: flex; gap: 8px; }
 .create-row input { flex: 1; }

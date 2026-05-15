@@ -142,7 +142,7 @@ pub fn start_timer(
                             s.completed_pomodoros
                         };
 
-                        // Save session to DB
+                        // Save session to DB and update task's last_used_at
                         if let Some(db_state) = app.try_state::<Database>() {
                             if let Ok(conn) = db_state.conn.lock() {
                                 let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
@@ -152,6 +152,13 @@ pub fn start_timer(
                                      VALUES (?1, ?2, ?3, ?4, 'work')",
                                     rusqlite::params![new_state.task_id, dur as i64, now, now],
                                 );
+                                // Update last_used_at on the associated task
+                                if new_state.task_id.is_some() {
+                                    let _ = conn.execute(
+                                        "UPDATE tasks SET last_used_at = ?1 WHERE id = ?2",
+                                        rusqlite::params![now, new_state.task_id],
+                                    );
+                                }
                             }
                         }
 

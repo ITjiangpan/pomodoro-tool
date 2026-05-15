@@ -7,6 +7,8 @@ pub struct Task {
     pub description: String,
     pub completed: bool,
     pub created_at: String,
+    pub session_count: i64,
+    pub last_used_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
