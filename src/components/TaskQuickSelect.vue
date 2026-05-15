@@ -10,7 +10,7 @@ const selectedTaskId = ref<number | null>(null)
 const newTaskTitle = ref('')
 const loading = ref(false)
 
-const emit = defineEmits<{ select: [taskId: number | null] }>()
+const emit = defineEmits<{ select: [taskId: number | null, taskTitle?: string] }>()
 
 onMounted(async () => { tasks.value = (await listTasks()).filter(t => !t.completed) })
 
@@ -26,13 +26,14 @@ async function handleCreate() {
     newTaskTitle.value = ''
     tasks.value.unshift(task)
     selectedTaskId.value = task.id
-    emit('select', task.id)
+    emit('select', task.id, task.title)
   } finally { loading.value = false }
 }
 
 function handleSelect(id: number) {
   selectedTaskId.value = id
-  emit('select', id)
+  const task = tasks.value.find(t => t.id === id)
+  emit('select', id, task?.title)
 }
 </script>
 

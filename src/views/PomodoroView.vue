@@ -10,6 +10,7 @@ const tauri = useTauri()
 const { state, init, destroy, formatTime, timerProgress, phaseLabel } = useTimer()
 
 const currentTaskId = ref<number | null>(null)
+const currentTaskTitle = ref('')
 const showStopConfirm = ref(false)
 const showSkipConfirm = ref(false)
 
@@ -50,7 +51,10 @@ async function confirmStop() {
   await tauri.stopTimer()
 }
 
-function handleTaskSelect(taskId: number | null) { currentTaskId.value = taskId }
+function handleTaskSelect(taskId: number | null, taskTitle?: string) {
+  currentTaskId.value = taskId
+  if (taskTitle) currentTaskTitle.value = taskTitle
+}
 </script>
 
 <template>
@@ -58,8 +62,17 @@ function handleTaskSelect(taskId: number | null) { currentTaskId.value = taskId 
     <TimerDisplay :time="formatTime(state.remaining_secs)" :phase-label="phaseLabel()" :progress="timerProgress()" :phase="state.phase" />
     <ControlButtons :phase="state.phase" :start-disabled="!currentTaskId" @start="handleStart" @pause="handlePause" @resume="handleResume" @skip="handleSkip" @stop="handleStop" />
     <div class="today-summary">今日完成: <strong>{{ state.completed_pomodoros }}</strong> 个番茄钟</div>
-    <TaskQuickSelect @select="handleTaskSelect" />
-    <p v-if="!currentTaskId && state.phase === 'idle'" class="select-hint">请在上方选择一个任务后开始专注</p>
+    <template v-if="state.phase === 'idle'">
+      <TaskQuickSelect @select="handleTaskSelect" />
+      <p v-if="!currentTaskId" class="select-hint">请在上方选择一个任务后开始专注</p>
+    </template>
+    <div v-else-if="currentTaskId" class="current-task-bar">
+      <div class="section-title">当前任务</div>
+      <div class="task-label">
+        <span class="task-check">✓</span>
+        {{ currentTaskTitle || '任务 #' + currentTaskId }}
+      </div>
+    </div>
 
     <Teleport to="body">
       <div v-if="showStopConfirm" class="confirm-overlay" @click.self="showStopConfirm = false">
@@ -99,4 +112,8 @@ function handleTaskSelect(taskId: number | null) { currentTaskId.value = taskId 
 .confirm-actions button { padding: 8px 24px; border-radius: 50px; font-size: 14px; }
 .btn-cancel { background: var(--color-secondary); color: var(--color-text); }
 .btn-danger { background: var(--color-primary); color: white; }
+.current-task-bar { margin-top: 20px; width: 100%; max-width: 360px; text-align: center; }
+.current-task-bar .section-title { font-size: 12px; color: var(--color-text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+.current-task-bar .task-label { background: var(--color-surface); padding: 10px 16px; border-radius: var(--radius-sm); font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.current-task-bar .task-check { color: var(--color-success); font-size: 16px; }
 </style>
