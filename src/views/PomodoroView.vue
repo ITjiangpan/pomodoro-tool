@@ -11,6 +11,7 @@ const { state, init, destroy, formatTime, timerProgress, phaseLabel } = useTimer
 
 const currentTaskId = ref<number | null>(null)
 const showStopConfirm = ref(false)
+const showSkipConfirm = ref(false)
 
 onMounted(async () => {
   await init(tauri)
@@ -38,7 +39,11 @@ async function handleStart() {
 }
 async function handlePause() { await tauri.pauseTimer() }
 async function handleResume() { await tauri.resumeTimer() }
-async function handleSkip() { await tauri.skipRest() }
+function handleSkip() { showSkipConfirm.value = true }
+async function confirmSkip() {
+  showSkipConfirm.value = false
+  await tauri.skipRest()
+}
 function handleStop() { showStopConfirm.value = true }
 async function confirmStop() {
   showStopConfirm.value = false
@@ -64,6 +69,16 @@ function handleTaskSelect(taskId: number | null) { currentTaskId.value = taskId 
           <div class="confirm-actions">
             <button class="btn-cancel" @click="showStopConfirm = false">取消</button>
             <button class="btn-danger" @click="confirmStop">放弃</button>
+          </div>
+        </div>
+      </div>
+      <div v-if="showSkipConfirm" class="confirm-overlay" @click.self="showSkipConfirm = false">
+        <div class="confirm-dialog">
+          <h3>确定跳过本次休息？</h3>
+          <p>休息太短，效果可能不好哦</p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" @click="showSkipConfirm = false">取消</button>
+            <button class="btn-danger" @click="confirmSkip">跳过</button>
           </div>
         </div>
       </div>

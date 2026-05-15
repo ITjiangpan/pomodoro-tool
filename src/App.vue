@@ -4,7 +4,11 @@ import BottomNav from './components/BottomNav.vue'
 
 <template>
   <div class="app-shell">
-    <router-view />
+    <router-view v-slot="{ Component }">
+      <keep-alive>
+        <component :is="Component" />
+      </keep-alive>
+    </router-view>
     <BottomNav />
   </div>
 </template>

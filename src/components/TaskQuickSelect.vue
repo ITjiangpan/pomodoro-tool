@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated } from 'vue'
 import type { Task } from '../types'
 import { useTauri } from '../composables/useTauri'
 
@@ -13,6 +13,9 @@ const loading = ref(false)
 const emit = defineEmits<{ select: [taskId: number | null] }>()
 
 onMounted(async () => { tasks.value = (await listTasks()).filter(t => !t.completed) })
+
+// Refresh task list when navigating back to this page
+onActivated(async () => { tasks.value = (await listTasks()).filter(t => !t.completed) })
 
 async function handleCreate() {
   const title = newTaskTitle.value.trim()
