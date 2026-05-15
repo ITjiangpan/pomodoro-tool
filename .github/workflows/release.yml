@@ -1,13 +1,11 @@
-name: Build
+name: Release
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 jobs:
-  build:
+  release:
     strategy:
       fail-fast: false
       matrix:
@@ -34,9 +32,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build Tauri app
+      - name: Build and Release
         uses: tauri-apps/tauri-action@v0
-        with:
-          args: --bundles ${{ matrix.bundles }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: v__VERSION__
+          releaseDraft: true
+          args: --bundles ${{ matrix.bundles }}
