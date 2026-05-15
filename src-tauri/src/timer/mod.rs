@@ -85,6 +85,7 @@ impl TimerEngine {
 
 use crate::db::Database;
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_notification::NotificationExt;
 
 #[tauri::command]
 pub fn start_timer(
@@ -159,6 +160,13 @@ pub fn start_timer(
                             "task_id": new_state.task_id,
                         }));
 
+                        // System notification
+                        let _ = app.notification()
+                            .builder()
+                            .title("休息一下")
+                            .body("专注完成，该休息了！")
+                            .show();
+
                         // Auto-start break if enabled
                         if settings.auto_start_break {
                             let is_long = completed_count % settings.long_break_interval as u64 == 0;
@@ -177,6 +185,13 @@ pub fn start_timer(
                         let _ = app.emit("timer:completed", serde_json::json!({
                             "session_type": "break",
                         }));
+
+                        // System notification
+                        let _ = app.notification()
+                            .builder()
+                            .title("休息一下")
+                            .body("休息结束，继续加油！")
+                            .show();
 
                         // Auto-start next work session if enabled
                         if settings.auto_start_work {
