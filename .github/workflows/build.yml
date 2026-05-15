@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v2
+        uses: tauri-apps/tauri-action@v0
         with:
           args: --bundles dmg,msi
         env:
