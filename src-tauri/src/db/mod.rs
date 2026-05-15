@@ -14,6 +14,8 @@ impl Database {
         conn.execute_batch(migrations::CREATE_TABLES)?;
         // Migration: add last_used_at column (ignore if already exists)
         let _ = conn.execute("ALTER TABLE tasks ADD COLUMN last_used_at TEXT", []);
+        // Migration: add theme column to settings
+        let _ = conn.execute("ALTER TABLE settings ADD COLUMN theme TEXT NOT NULL DEFAULT 'light'", []);
         Ok(Self {
             conn: Mutex::new(conn),
         })

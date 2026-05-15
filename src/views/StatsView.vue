@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onActivated, watch } from 'vue'
 import type { Stats } from '../types'
 import { useTauri } from '../composables/useTauri'
 
@@ -15,6 +15,7 @@ async function loadStats() {
 }
 
 onMounted(loadStats)
+onActivated(loadStats)
 watch(range, loadStats)
 
 function maxCount(): number {

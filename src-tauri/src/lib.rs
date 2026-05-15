@@ -31,8 +31,8 @@ pub fn run() {
                     let default = Settings::default();
                     conn.execute(
                         "INSERT INTO settings (work_duration, short_break, long_break,
-                         long_break_interval, auto_start_break, auto_start_work)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                         long_break_interval, auto_start_break, auto_start_work, theme)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                         rusqlite::params![
                             default.work_duration,
                             default.short_break,
@@ -40,6 +40,7 @@ pub fn run() {
                             default.long_break_interval,
                             default.auto_start_break as i32,
                             default.auto_start_work as i32,
+                            default.theme,
                         ],
                     ).unwrap();
                 } else {
@@ -62,6 +63,7 @@ pub fn run() {
             task::list_tasks,
             timer::config::get_settings,
             timer::config::update_settings,
+            timer::config::clear_all_data,
             timer::start_timer,
             timer::pause_timer,
             timer::resume_timer,

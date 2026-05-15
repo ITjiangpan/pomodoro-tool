@@ -43,6 +43,9 @@ export function useTauri() {
   async function getTimerState() {
     return invoke('get_timer_state')
   }
+  async function clearAllData() {
+    return invoke('clear_all_data')
+  }
 
   function onTimerTick(callback: (payload: TimerTick) => void) {
     return listen<TimerTick>('timer:tick', (event) => callback(event.payload))
@@ -57,5 +60,6 @@ export function useTauri() {
     getStats,
     startTimer, pauseTimer, resumeTimer, stopTimer, skipRest, getTimerState,
     onTimerTick, onTimerCompleted,
+    clearAllData,
   }
 }

@@ -1,5 +1,18 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import BottomNav from './components/BottomNav.vue'
+import { useTauri } from './composables/useTauri'
+
+const { getSettings } = useTauri()
+
+onMounted(async () => {
+  try {
+    const settings = await getSettings()
+    document.documentElement.dataset.theme = settings.theme
+  } catch (e) {
+    document.documentElement.dataset.theme = 'light'
+  }
+})
 </script>
 
 <template>

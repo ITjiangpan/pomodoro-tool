@@ -35,6 +35,7 @@ export interface Settings {
   long_break_interval: number
   auto_start_break: boolean
   auto_start_work: boolean
+  theme: string
 }
 
 export interface Stats {

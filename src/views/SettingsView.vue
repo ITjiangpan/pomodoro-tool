@@ -3,14 +3,16 @@ import { ref, onMounted } from 'vue'
 import type { Settings } from '../types'
 import { useTauri } from '../composables/useTauri'
 
-const { getSettings, updateSettings } = useTauri()
+const { getSettings, updateSettings, clearAllData } = useTauri()
 
 const settings = ref<Settings>({
   work_duration: 25, short_break: 5, long_break: 15,
   long_break_interval: 4, auto_start_break: false, auto_start_work: false,
+  theme: 'light',
 })
 
 const saved = ref(false)
+const showClearConfirm = ref(false)
 
 onMounted(async () => { settings.value = await getSettings() })
 
@@ -18,6 +20,19 @@ async function save() {
   await updateSettings(settings.value)
   saved.value = true
   setTimeout(() => { saved.value = false }, 2000)
+}
+
+async function toggleTheme(e: Event) {
+  const checked = (e.target as HTMLInputElement).checked
+  settings.value.theme = checked ? 'dark' : 'light'
+  document.documentElement.dataset.theme = settings.value.theme
+  await updateSettings(settings.value)
+}
+
+async function confirmClear() {
+  showClearConfirm.value = false
+  await clearAllData()
+  window.location.reload()
 }
 </script>
 
@@ -61,9 +76,34 @@ async function save() {
     </section>
 
     <section>
+      <div class="section-title">显示</div>
+      <div class="setting-row toggle-row">
+        <label>深色主题</label>
+        <label class="toggle"><input type="checkbox" :checked="settings.theme === 'dark'" @change="toggleTheme" /><span class="slider"></span></label>
+      </div>
+    </section>
+
+    <section>
       <div class="section-title">数据管理</div>
       <div class="setting-row"><label>所有数据存储在本地，不会上传到网络</label></div>
+      <div class="setting-row danger-row">
+        <label>清除所有数据</label>
+        <button class="btn-clear" @click="showClearConfirm = true">清除</button>
+      </div>
     </section>
+
+    <Teleport to="body">
+      <div v-if="showClearConfirm" class="confirm-overlay" @click.self="showClearConfirm = false">
+        <div class="confirm-dialog">
+          <h3>确定清除所有数据？</h3>
+          <p>此操作将删除所有任务和专注记录，且无法恢复</p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" @click="showClearConfirm = false">取消</button>
+            <button class="btn-danger" @click="confirmClear">确定清除</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -86,4 +126,15 @@ section { margin-bottom: 28px; }
 .slider::before { content: ''; position: absolute; width: 20px; height: 20px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: 0.3s; }
 .toggle input:checked + .slider { background: var(--color-primary); }
 .toggle input:checked + .slider::before { transform: translateX(20px); }
+.danger-row label { color: var(--color-primary); }
+.btn-clear { background: none; color: var(--color-primary); border: 1px solid var(--color-primary); padding: 4px 14px; font-size: 13px; border-radius: 50px; }
+.btn-clear:hover { background: var(--color-primary); color: white; }
+.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.confirm-dialog { background: var(--color-surface); border-radius: var(--radius); padding: 24px; width: 300px; text-align: center; }
+.confirm-dialog h3 { font-size: 16px; margin-bottom: 8px; }
+.confirm-dialog p { font-size: 13px; color: var(--color-text-muted); margin-bottom: 20px; }
+.confirm-actions { display: flex; gap: 12px; justify-content: center; }
+.confirm-actions button { padding: 8px 24px; border-radius: 50px; font-size: 14px; }
+.btn-cancel { background: var(--color-secondary); color: var(--color-text); }
+.btn-danger { background: var(--color-primary); color: white; }
 </style>

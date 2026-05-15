@@ -68,7 +68,6 @@ function handleTaskSelect(taskId: number | null, taskTitle?: string) {
     <div class="today-summary">今日完成: <strong>{{ state.completed_pomodoros }}</strong> 个番茄钟</div>
     <template v-if="state.phase === 'idle'">
       <TaskQuickSelect @select="handleTaskSelect" />
-      <p v-if="!currentTaskId" class="select-hint">请在上方选择一个任务后开始专注</p>
     </template>
     <div v-else-if="currentTaskId" class="current-task-bar">
       <div class="section-title">当前任务</div>
@@ -107,7 +106,6 @@ function handleTaskSelect(taskId: number | null, taskTitle?: string) {
 .pomodoro-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
 .today-summary { margin-top: 20px; font-size: 14px; color: var(--color-text-muted); }
 .today-summary strong { color: var(--color-primary); font-size: 18px; }
-.select-hint { margin-top: 8px; font-size: 13px; color: var(--color-text-muted); }
 .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .confirm-dialog { background: var(--color-surface); border-radius: var(--radius); padding: 24px; width: 300px; text-align: center; }
 .confirm-dialog h3 { font-size: 16px; margin-bottom: 8px; }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated } from 'vue'
 import type { Task } from '../types'
 import { useTauri } from '../composables/useTauri'
 
@@ -11,6 +11,7 @@ const editingId = ref<number | null>(null)
 const editTitle = ref('')
 
 onMounted(async () => { tasks.value = await listTasks() })
+onActivated(async () => { tasks.value = await listTasks() })
 
 async function handleCreate() {
   const title = newTitle.value.trim()

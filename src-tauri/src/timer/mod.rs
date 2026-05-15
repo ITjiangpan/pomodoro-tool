@@ -98,7 +98,7 @@ pub fn start_timer(
         let conn = db.conn.lock().map_err(|e| e.to_string())?;
         conn.query_row(
             "SELECT work_duration, short_break, long_break, long_break_interval,
-                    auto_start_break, auto_start_work FROM settings WHERE id = 1",
+                    auto_start_break, auto_start_work, theme FROM settings WHERE id = 1",
             [],
             |row| Ok(config::Settings {
                 work_duration: row.get(0)?,
@@ -107,6 +107,7 @@ pub fn start_timer(
                 long_break_interval: row.get(3)?,
                 auto_start_break: row.get::<_, i32>(4)? != 0,
                 auto_start_work: row.get::<_, i32>(5)? != 0,
+                theme: row.get::<_, String>(6)?,
             }),
         ).map_err(|e| e.to_string())?
     };
