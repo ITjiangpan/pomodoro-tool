@@ -11,7 +11,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest]
+        include:
+          - platform: macos-latest
+            bundles: dmg
+          - platform: windows-latest
+            bundles: msi
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -33,6 +37,6 @@ jobs:
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         with:
-          args: --bundles dmg,msi
+          args: --bundles ${{ matrix.bundles }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
