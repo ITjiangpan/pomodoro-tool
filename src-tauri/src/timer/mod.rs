@@ -116,6 +116,7 @@ pub fn start_timer(
     let engine_clone = engine.inner().clone();
 
     tauri::async_runtime::spawn(async move {
+        let mut pending_task_id: Option<i64> = None;
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             let current = engine_clone.get_state();
@@ -178,6 +179,7 @@ pub fn start_timer(
                         // Auto-start break if enabled
                         if settings.auto_start_break {
                             let is_long = completed_count % settings.long_break_interval as u64 == 0;
+                            pending_task_id = new_state.task_id;
                             engine_clone.start_rest(&settings, is_long);
                             let s = engine_clone.get_state();
                             let _ = app.emit("timer:tick", serde_json::json!({
@@ -203,7 +205,7 @@ pub fn start_timer(
 
                         // Auto-start next work session if enabled
                         if settings.auto_start_work {
-                            let task_id = { let s = engine_clone.state.lock().unwrap(); s.task_id };
+                            let task_id = pending_task_id.take();
                             engine_clone.start_work(&settings, task_id);
                             let s = engine_clone.get_state();
                             let _ = app.emit("timer:tick", serde_json::json!({
@@ -217,6 +219,11 @@ pub fn start_timer(
                     _ => {}
                 }
 
+                let _ = app.emit("timer:tick", serde_json::json!({
+                    "phase": "idle",
+                    "remaining_secs": 0,
+                    "total_secs": 0,
+                }));
                 engine_clone.reset();
                 break;
             }
